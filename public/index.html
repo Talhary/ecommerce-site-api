@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Sign-In Example</title>
+    <style>
+      #user-info-section{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: row;
+      }
+        body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f0f0f0;
+}
+
+#app {
+    text-align: center;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+#google-signin-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    color: white;
+    background-color: #4285F4;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+#logout-btn {
+    padding: 10px 20px;
+    color: white;
+    background-color: #f44336;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+    </style>
+</head>
+<body> 
+    <div id="app">
+    <div id="signin-section">
+        <h1>Sign In</h1>
+        <a id="google-signin-btn" href="/auth/google">Sign in with Google</a>
+    </div>
+    <div id="user-info-section" style="display: none;">
+        <h1>Welcome</h1>
+        <p id="user-name"></p>
+        <p id="user-email"></p>
+        <p>JWT Token: <span id="jwt-token-display"></span></p>
+        <img id="image"/>
+        <button id="logout-btn">Logout</button>
+    </div>
+    <input type="hidden" id="jwt-token">
+</div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+  const signinSection = document.getElementById('signin-section');
+  const userInfoSection = document.getElementById('user-info-section');
+  const userName = document.getElementById('user-name');
+  const userEmail = document.getElementById('user-email');
+  const logoutBtn = document.getElementById('logout-btn');
+  const jwtToken = document.getElementById('jwt-token'); // Hidden input field
+  const imageSection = document.getElementById('image')
+  // Function to fetch user info using the token
+  const getUserInfo = (token) => {
+    return fetch('/auth/user', {
+      headers: {
+        'Authorization': `Bearer ${token}` // Include the token in the headers
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data)
+      if (data.user) {
+        showUserInfo(data.user);
+      } else {
+        showSignin();
+      }
+    });
+  };
+
+  // Check if a token is present in the URL (e.g., after successful Google authentication)
+  const urlParams = new URLSearchParams(window.location.search);
+  let token = urlParams.get('token');
+  
+  if(!token){
+    token = localStorage.getItem('token')
+  } 
+  
+  if (token) {
+    localStorage.setItem('token',token)
+    jwtToken.value = token; // Set the token in the hidden input field
+    getUserInfo(token); // Fetch user info using the token
+    window.history.replaceState({}, document.title, '/'); // Remove the token from the URL
+  } else {
+    showSignin();
+  }
+
+  // Logout button click event
+  logoutBtn.addEventListener('click', () => {
+    localStorage.clear()
+    jwtToken.value = ''; // Clear the token
+    showSignin();
+  });
+
+  // Show sign-in section
+  function showSignin() {
+    signinSection.style.display = 'block';
+    userInfoSection.style.display = 'none';
+  }
+
+  // Show user info section
+  function showUserInfo(user) {
+    userName.textContent = `Name: ${user.displayName}`;
+    userEmail.textContent = `Email: ${user.email}`;
+    imageSection.src = user.picture
+    signinSection.style.display = 'none';
+    userInfoSection.style.display = 'block';
+  }
+});
+
+    </script>
+</body>
+</html>
